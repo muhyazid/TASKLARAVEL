@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class ProductController extends Controller
     public function index()
     {
         //
-        $products = Product::all();
+        $products = Product::with('category')->get();
         return view('Products.index', compact('products'));
     }
 
@@ -25,7 +26,8 @@ class ProductController extends Controller
     public function create()
     {
         //
-        return view('Products.create');
+        $categories = Category::all();
+        return view('Products.create', compact('categories'));
     }
 
     /**
@@ -37,12 +39,14 @@ class ProductController extends Controller
         //
         $request->validate([
             'nama' => 'required|string|max:255',
+            'kategori_id' => 'required|exists:categories,id',   // Validasi untuk memastikan kategori ada
             'deskripsi' => 'required',
             'harga' => 'required|integer'
         ]);
 
         Product::create([
         'nama' => $request->nama,
+        'kategori_id' => $request->kategori_id,
         'deskripsi' => $request->deskripsi,
         'harga' => $request->harga,
         ]);
@@ -53,21 +57,12 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        //
-        return view('Products.show', compact('product'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
+    public function show(string $id){
         // Ambil data produk berdasarkan ID
         $product = Product::findOrFail($id);
+        $categories = Category::all();
 
-        return view('Products.edit', compact('product'));
+        return view('Products.edit', compact('product','categories'));
     }
 
     /**
@@ -78,12 +73,20 @@ class ProductController extends Controller
         //
         $request->validate([
             'nama' => 'required|string|max:255',
+            'kategori_id' => 'required|exists:categories,id',
             'deskripsi' => 'required',
             'harga' => 'required|numeric'
         ]);
 
-         $product->update($request->only(['nama', 'deskripsi', 'harga']));
+        $product->update($request->only(['nama', 'kategori_id', 'deskripsi', 'harga']));
         return redirect()->route('product.index');
+    }
+
+    public function edit (string $id){
+        $product=Product::findOrFail($id);
+        $categories=Category::all();
+
+        return view('Products.edit', compact('product','categories'));
     }
 
     /**
